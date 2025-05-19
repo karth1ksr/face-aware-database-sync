@@ -1,11 +1,97 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import FaceRecognitionForm, { CameraData } from '@/components/FaceRecognitionForm';
+import CameraFeedDisplay from '@/components/CameraFeedDisplay';
+import RecognitionResults from '@/components/RecognitionResults';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
+import { ArrowLeft } from 'lucide-react';
+
+// Mock data for demonstration purposes
+const mockRecognizedFaces = [
+  {
+    id: '1',
+    name: 'John Doe',
+    confidence: 0.94,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    confidence: 0.87,
+    timestamp: new Date().toISOString(),
+  },
+];
 
 const Index = () => {
+  const [isRecognitionActive, setIsRecognitionActive] = useState(false);
+  const [cameraData, setCameraData] = useState<CameraData | null>(null);
+  const [recognizedFaces, setRecognizedFaces] = useState<any[]>([]);
+
+  const handleStartRecognition = (data: CameraData) => {
+    setCameraData(data);
+    setIsRecognitionActive(true);
+    
+    // In a real implementation, you would:
+    // 1. Connect to your Python backend
+    // 2. Send the camera configuration
+    // 3. Start receiving recognition data
+    
+    // For demo purposes, we'll simulate receiving recognition data after a delay
+    setTimeout(() => {
+      setRecognizedFaces(mockRecognizedFaces);
+      toast({
+        title: "Face Recognition Active",
+        description: `Connected to ${data.source === 'webcam' ? 'webcam' : 'IP camera'} successfully`,
+      });
+    }, 2000);
+  };
+
+  const handleStopRecognition = () => {
+    setIsRecognitionActive(false);
+    setCameraData(null);
+    setRecognizedFaces([]);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold mb-8 text-center">Face Recognition System</h1>
+        
+        <div className="flex flex-col items-center">
+          {isRecognitionActive ? (
+            <>
+              <div className="w-full flex flex-col items-center">
+                <Button 
+                  variant="outline" 
+                  className="mb-6 self-start"
+                  onClick={handleStopRecognition}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Setup
+                </Button>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                  <div className="lg:col-span-2">
+                    <CameraFeedDisplay 
+                      isActive={isRecognitionActive} 
+                      feedData={cameraData} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-4 lg:col-span-2">
+                    <RecognitionResults 
+                      isActive={isRecognitionActive}
+                      recognizedFaces={recognizedFaces}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <FaceRecognitionForm onStartRecognition={handleStartRecognition} />
+          )}
+        </div>
       </div>
     </div>
   );
