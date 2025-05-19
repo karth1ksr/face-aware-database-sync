@@ -8,20 +8,27 @@ import { toast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 
 // Mock data for demonstration purposes
-const mockRecognizedFaces = [
-  {
-    id: '1',
-    name: 'John Doe',
-    confidence: 0.94,
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    confidence: 0.87,
-    timestamp: new Date().toISOString(),
-  },
-];
+const generateMockRecognizedFaces = (cameraCount = 1) => {
+  const faces = [];
+  for (let i = 0; i < cameraCount; i++) {
+    const cameraNumber = i + 1;
+    faces.push({
+      id: `1-cam${cameraNumber}`,
+      name: 'John Doe',
+      confidence: 0.94,
+      timestamp: new Date().toISOString(),
+      cameraNumber,
+    });
+    faces.push({
+      id: `2-cam${cameraNumber}`,
+      name: 'Jane Smith',
+      confidence: 0.87,
+      timestamp: new Date().toISOString(),
+      cameraNumber,
+    });
+  }
+  return faces;
+};
 
 const Index = () => {
   const [isRecognitionActive, setIsRecognitionActive] = useState(false);
@@ -38,11 +45,13 @@ const Index = () => {
     // 3. Start receiving recognition data
     
     // For demo purposes, we'll simulate receiving recognition data after a delay
+    const cameraCount = data.source === 'ip' ? data.cameraCount || 1 : 1;
+    
     setTimeout(() => {
-      setRecognizedFaces(mockRecognizedFaces);
+      setRecognizedFaces(generateMockRecognizedFaces(cameraCount));
       toast({
         title: "Face Recognition Active",
-        description: `Connected to ${data.source === 'webcam' ? 'webcam' : 'IP camera'} successfully`,
+        description: `Connected to ${data.source === 'webcam' ? 'webcam' : 'IP camera(s)'} successfully`,
       });
     }, 2000);
   };
@@ -83,6 +92,7 @@ const Index = () => {
                     <RecognitionResults 
                       isActive={isRecognitionActive}
                       recognizedFaces={recognizedFaces}
+                      cameraCount={cameraData?.cameraCount || 1}
                     />
                   </div>
                 </div>

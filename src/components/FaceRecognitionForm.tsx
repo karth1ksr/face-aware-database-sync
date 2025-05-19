@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,18 +13,59 @@ interface FaceRecognitionFormProps {
 
 export interface CameraData {
   source: 'webcam' | 'ip';
-  ipAddress?: string;
+  ipAddresses?: string[];
   cameraCount?: number;
   cameraLocation?: string;
-  cameraNumber?: number;
+  cameraNumbers?: number[];
 }
 
 const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecognition }) => {
   const [cameraSource, setCameraSource] = useState<'webcam' | 'ip'>('webcam');
-  const [ipAddress, setIpAddress] = useState<string>('');
   const [cameraCount, setCameraCount] = useState<number>(1);
   const [cameraLocation, setCameraLocation] = useState<string>('');
-  const [cameraNumber, setCameraNumber] = useState<number>(1);
+  const [ipAddresses, setIpAddresses] = useState<string[]>(['']);
+  const [cameraNumbers, setCameraNumbers] = useState<number[]>([1]);
+
+  // Update camera fields when count changes
+  useEffect(() => {
+    // Resize arrays based on camera count
+    setIpAddresses(prev => {
+      const newArray = [...prev];
+      // Add or remove elements to match the new count
+      if (newArray.length < cameraCount) {
+        while (newArray.length < cameraCount) {
+          newArray.push('');
+        }
+      } else if (newArray.length > cameraCount) {
+        return newArray.slice(0, cameraCount);
+      }
+      return newArray;
+    });
+    
+    setCameraNumbers(prev => {
+      const newArray = [...prev];
+      if (newArray.length < cameraCount) {
+        while (newArray.length < cameraCount) {
+          newArray.push(newArray.length + 1);
+        }
+      } else if (newArray.length > cameraCount) {
+        return newArray.slice(0, cameraCount);
+      }
+      return newArray;
+    });
+  }, [cameraCount]);
+
+  const updateIpAddress = (index: number, value: string) => {
+    const newAddresses = [...ipAddresses];
+    newAddresses[index] = value;
+    setIpAddresses(newAddresses);
+  };
+
+  const updateCameraNumber = (index: number, value: number) => {
+    const newNumbers = [...cameraNumbers];
+    newNumbers[index] = value;
+    setCameraNumbers(newNumbers);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,19 +75,20 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
     };
 
     if (cameraSource === 'ip') {
-      if (!ipAddress) {
+      // Validate IP camera data
+      if (ipAddresses.some(address => !address)) {
         toast({
           title: "Error",
-          description: "Please enter IP camera address",
+          description: "Please enter all IP camera addresses",
           variant: "destructive"
         });
         return;
       }
       
-      cameraData.ipAddress = ipAddress;
+      cameraData.ipAddresses = ipAddresses;
       cameraData.cameraCount = cameraCount;
       cameraData.cameraLocation = cameraLocation;
-      cameraData.cameraNumber = cameraNumber;
+      cameraData.cameraNumbers = cameraNumbers;
     }
 
     onStartRecognition(cameraData);
@@ -84,23 +126,12 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
             {cameraSource === 'ip' && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ip-address">Camera IP Address</Label>
-                  <Input 
-                    id="ip-address" 
-                    value={ipAddress} 
-                    onChange={(e) => setIpAddress(e.target.value)} 
-                    placeholder="e.g., rtsp://192.168.1.100:554/live"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
                   <Label htmlFor="camera-count">Number of Cameras</Label>
                   <Input 
                     id="camera-count" 
                     type="number" 
                     value={cameraCount.toString()} 
-                    onChange={(e) => setCameraCount(parseInt(e.target.value))} 
+                    onChange={(e) => setCameraCount(parseInt(e.target.value) || 1)} 
                     min="1"
                     required
                   />
@@ -117,17 +148,35 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="camera-number">Camera Number</Label>
-                  <Input 
-                    id="camera-number" 
-                    type="number" 
-                    value={cameraNumber.toString()} 
-                    onChange={(e) => setCameraNumber(parseInt(e.target.value))} 
-                    min="1"
-                    required
-                  />
-                </div>
+                {/* Dynamic camera details based on camera count */}
+                {Array.from({ length: cameraCount }).map((_, index) => (
+                  <div key={index} className="space-y-4 p-4 border rounded-md bg-muted/20">
+                    <h3 className="font-medium">Camera {index + 1}</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor={`ip-address-${index}`}>IP Address</Label>
+                      <Input 
+                        id={`ip-address-${index}`} 
+                        value={ipAddresses[index] || ''} 
+                        onChange={(e) => updateIpAddress(index, e.target.value)} 
+                        placeholder="e.g., rtsp://192.168.1.100:554/live"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor={`camera-number-${index}`}>Camera Number</Label>
+                      <Input 
+                        id={`camera-number-${index}`} 
+                        type="number" 
+                        value={cameraNumbers[index]?.toString() || ''} 
+                        onChange={(e) => updateCameraNumber(index, parseInt(e.target.value) || 1)} 
+                        min="1"
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
