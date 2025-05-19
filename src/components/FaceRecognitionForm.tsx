@@ -15,16 +15,16 @@ export interface CameraData {
   source: 'webcam' | 'ip';
   ipAddresses?: string[];
   cameraCount?: number;
-  cameraLocation?: string;
+  cameraLocations?: string[];
   cameraNumbers?: number[];
 }
 
 const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecognition }) => {
   const [cameraSource, setCameraSource] = useState<'webcam' | 'ip'>('webcam');
   const [cameraCount, setCameraCount] = useState<number>(1);
-  const [cameraLocation, setCameraLocation] = useState<string>('');
   const [ipAddresses, setIpAddresses] = useState<string[]>(['']);
   const [cameraNumbers, setCameraNumbers] = useState<number[]>([1]);
+  const [cameraLocations, setCameraLocations] = useState<string[]>(['']);
 
   // Update camera fields when count changes
   useEffect(() => {
@@ -53,6 +53,18 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
       }
       return newArray;
     });
+
+    setCameraLocations(prev => {
+      const newArray = [...prev];
+      if (newArray.length < cameraCount) {
+        while (newArray.length < cameraCount) {
+          newArray.push('');
+        }
+      } else if (newArray.length > cameraCount) {
+        return newArray.slice(0, cameraCount);
+      }
+      return newArray;
+    });
   }, [cameraCount]);
 
   const updateIpAddress = (index: number, value: string) => {
@@ -67,6 +79,12 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
     setCameraNumbers(newNumbers);
   };
 
+  const updateCameraLocation = (index: number, value: string) => {
+    const newLocations = [...cameraLocations];
+    newLocations[index] = value;
+    setCameraLocations(newLocations);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -76,10 +94,10 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
 
     if (cameraSource === 'ip') {
       // Validate IP camera data
-      if (ipAddresses.some(address => !address)) {
+      if (ipAddresses.some(address => !address) || cameraLocations.some(location => !location)) {
         toast({
           title: "Error",
-          description: "Please enter all IP camera addresses",
+          description: "Please fill in all camera addresses and locations",
           variant: "destructive"
         });
         return;
@@ -87,7 +105,7 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
       
       cameraData.ipAddresses = ipAddresses;
       cameraData.cameraCount = cameraCount;
-      cameraData.cameraLocation = cameraLocation;
+      cameraData.cameraLocations = cameraLocations;
       cameraData.cameraNumbers = cameraNumbers;
     }
 
@@ -137,17 +155,6 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="camera-location">Camera Location</Label>
-                  <Input 
-                    id="camera-location" 
-                    value={cameraLocation} 
-                    onChange={(e) => setCameraLocation(e.target.value)} 
-                    placeholder="e.g., Main Entrance"
-                    required
-                  />
-                </div>
-                
                 {/* Dynamic camera details based on camera count */}
                 {Array.from({ length: cameraCount }).map((_, index) => (
                   <div key={index} className="space-y-4 p-4 border rounded-md bg-muted/20">
@@ -172,6 +179,17 @@ const FaceRecognitionForm: React.FC<FaceRecognitionFormProps> = ({ onStartRecogn
                         value={cameraNumbers[index]?.toString() || ''} 
                         onChange={(e) => updateCameraNumber(index, parseInt(e.target.value) || 1)} 
                         min="1"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`camera-location-${index}`}>Camera Location</Label>
+                      <Input 
+                        id={`camera-location-${index}`} 
+                        value={cameraLocations[index] || ''} 
+                        onChange={(e) => updateCameraLocation(index, e.target.value)} 
+                        placeholder="e.g., Main Entrance, Lobby, etc."
                         required
                       />
                     </div>

@@ -8,16 +8,19 @@ import { toast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 
 // Mock data for demonstration purposes
-const generateMockRecognizedFaces = (cameraCount = 1) => {
+const generateMockRecognizedFaces = (cameraCount = 1, cameraLocations: string[] = []) => {
   const faces = [];
   for (let i = 0; i < cameraCount; i++) {
     const cameraNumber = i + 1;
+    const location = cameraLocations[i] || `Location ${i+1}`;
+    
     faces.push({
       id: `1-cam${cameraNumber}`,
       name: 'John Doe',
       confidence: 0.94,
       timestamp: new Date().toISOString(),
       cameraNumber,
+      location,
     });
     faces.push({
       id: `2-cam${cameraNumber}`,
@@ -25,6 +28,7 @@ const generateMockRecognizedFaces = (cameraCount = 1) => {
       confidence: 0.87,
       timestamp: new Date().toISOString(),
       cameraNumber,
+      location,
     });
   }
   return faces;
@@ -46,9 +50,10 @@ const Index = () => {
     
     // For demo purposes, we'll simulate receiving recognition data after a delay
     const cameraCount = data.source === 'ip' ? data.cameraCount || 1 : 1;
+    const cameraLocations = data.source === 'ip' ? data.cameraLocations || [] : [];
     
     setTimeout(() => {
-      setRecognizedFaces(generateMockRecognizedFaces(cameraCount));
+      setRecognizedFaces(generateMockRecognizedFaces(cameraCount, cameraLocations));
       toast({
         title: "Face Recognition Active",
         description: `Connected to ${data.source === 'webcam' ? 'webcam' : 'IP camera(s)'} successfully`,

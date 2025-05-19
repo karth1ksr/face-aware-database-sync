@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -6,7 +7,8 @@ interface Person {
   name: string;
   confidence: number;
   timestamp: string;
-  cameraNumber?: number; // Add camera number to track which camera detected the person
+  cameraNumber?: number;
+  location?: string;
 }
 
 interface RecognitionResultsProps {
@@ -40,32 +42,40 @@ const RecognitionResults: React.FC<RecognitionResultsProps> = ({ isActive, recog
       <CardContent>
         {cameraCount > 1 ? (
           // Multiple cameras view
-          cameraKeys.map((cameraNumber) => (
-            <div key={cameraNumber} className="mb-6 last:mb-0">
-              <h3 className="text-lg font-semibold mb-2">Camera {cameraNumber}</h3>
-              <div className="space-y-4">
-                {facesByCamera[cameraNumber].map((person) => (
-                  <div 
-                    key={person.id} 
-                    className="p-3 border rounded-lg bg-muted/30 flex justify-between items-center"
-                  >
-                    <div>
-                      <h3 className="font-medium">{person.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(person.timestamp).toLocaleTimeString()}
-                      </p>
+          cameraKeys.map((cameraNumber) => {
+            // Get location from the first entry for this camera
+            const location = facesByCamera[cameraNumber][0]?.location || `Camera ${cameraNumber}`;
+            
+            return (
+              <div key={cameraNumber} className="mb-6 last:mb-0">
+                <h3 className="text-lg font-semibold mb-2">Camera {cameraNumber} - {location}</h3>
+                <div className="space-y-4">
+                  {facesByCamera[cameraNumber].map((person) => (
+                    <div 
+                      key={person.id} 
+                      className="p-3 border rounded-lg bg-muted/30 flex justify-between items-center"
+                    >
+                      <div>
+                        <h3 className="font-medium">{person.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(person.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <div className="text-sm font-medium">
+                        {Math.round(person.confidence * 100)}% match
+                      </div>
                     </div>
-                    <div className="text-sm font-medium">
-                      {Math.round(person.confidence * 100)}% match
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           // Single camera view - keep original layout
           <div className="space-y-4">
+            {recognizedFaces.length > 0 && recognizedFaces[0].location && (
+              <h3 className="text-lg font-semibold mb-2">{recognizedFaces[0].location}</h3>
+            )}
             {recognizedFaces.map((person) => (
               <div 
                 key={person.id} 
